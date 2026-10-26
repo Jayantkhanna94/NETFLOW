@@ -16,13 +16,69 @@ export default function NetworkMonitoring() {
 
   // Topology node mapping with device links
   const nodes = [
-    { name: "Internet Gateway", type: "Gateway", ip: "10.10.0.254", x: 50, y: 10, icon: Globe, status: "Online" },
-    { name: "Core Router", type: "Router", ip: "10.10.0.2", x: 50, y: 36, icon: Server, status: "Online" },
-    { name: "Core Switch", type: "Switch", ip: "10.10.0.1", x: 50, y: 62, icon: Server, status: "Online" },
-    { name: "Computer Labs", type: "Access Point", ip: "10.10.4.18", x: 16, y: 88, icon: Wifi, status: "Offline" },
-    { name: "Library", type: "Access Point", ip: "10.10.3.21", x: 39, y: 88, icon: Wifi, status: "Online" },
-    { name: "Admin Block", type: "Access Point", ip: "10.10.6.1", x: 62, y: 88, icon: Wifi, status: "Online" },
-    { name: "Data Center", type: "Servers", ip: "10.10.5.11", x: 85, y: 88, icon: Database, status: "Online" },
+    {
+      name: "Internet Gateway",
+      type: "Gateway",
+      ip: "10.10.0.254",
+      x: 50,
+      y: 10,
+      icon: Globe,
+      status: "Online",
+    },
+    {
+      name: "Core Router",
+      type: "Router",
+      ip: "10.10.0.2",
+      x: 50,
+      y: 36,
+      icon: Server,
+      status: "Online",
+    },
+    {
+      name: "Core Switch",
+      type: "Switch",
+      ip: "10.10.0.1",
+      x: 50,
+      y: 62,
+      icon: Server,
+      status: "Online",
+    },
+    {
+      name: "Computer Labs",
+      type: "Access Point",
+      ip: "10.10.4.18",
+      x: 16,
+      y: 88,
+      icon: Wifi,
+      status: "Offline",
+    },
+    {
+      name: "Library",
+      type: "Access Point",
+      ip: "10.10.3.21",
+      x: 39,
+      y: 88,
+      icon: Wifi,
+      status: "Online",
+    },
+    {
+      name: "Admin Block",
+      type: "Access Point",
+      ip: "10.10.6.1",
+      x: 62,
+      y: 88,
+      icon: Wifi,
+      status: "Online",
+    },
+    {
+      name: "Data Center",
+      type: "Servers",
+      ip: "10.10.5.11",
+      x: 85,
+      y: 88,
+      icon: Database,
+      status: "Online",
+    },
   ];
 
   const [selectedNode, setSelectedNode] = useState(null);
@@ -48,9 +104,7 @@ export default function NetworkMonitoring() {
             <ShieldCheck size={18} />
             Global Packet Loss
           </div>
-          <strong className="big">
-            {liveMetrics.packetLoss}
-          </strong>
+          <strong className="big">{liveMetrics.packetLoss}</strong>
           <span className="good">Healthy operational bounds</span>
         </Card>
 
@@ -64,7 +118,11 @@ export default function NetworkMonitoring() {
             <small> / {liveMetrics.totalInterfaces}</small>
           </strong>
           <span className="good">
-            {((liveMetrics.interfacesUp / liveMetrics.totalInterfaces) * 100).toFixed(1)}% availability
+            {(
+              (liveMetrics.interfacesUp / liveMetrics.totalInterfaces) *
+              100
+            ).toFixed(1)}
+            % availability
           </span>
         </Card>
       </div>
@@ -105,7 +163,9 @@ export default function NetworkMonitoring() {
                       ? "2px solid var(--primary)"
                       : undefined,
                 }}
-                onClick={() => setSelectedNode({ ...node, status: currentStatus })}
+                onClick={() =>
+                  setSelectedNode({ ...node, status: currentStatus })
+                }
                 title={`Click to inspect ${node.name}`}
               >
                 <div className="node-icon">
@@ -135,22 +195,69 @@ export default function NetworkMonitoring() {
               </button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--border)", paddingBottom: "8px" }}>
-                <span style={{ color: "var(--muted)", fontSize: "12px" }}>Status</span>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                marginBottom: "20px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid var(--border)",
+                  paddingBottom: "8px",
+                }}
+              >
+                <span style={{ color: "var(--muted)", fontSize: "12px" }}>
+                  Status
+                </span>
                 <Status value={selectedNode.status} />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--border)", paddingBottom: "8px" }}>
-                <span style={{ color: "var(--muted)", fontSize: "12px" }}>IP Address</span>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid var(--border)",
+                  paddingBottom: "8px",
+                }}
+              >
+                <span style={{ color: "var(--muted)", fontSize: "12px" }}>
+                  IP Address
+                </span>
                 <b className="mono">{selectedNode.ip}</b>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--border)", paddingBottom: "8px" }}>
-                <span style={{ color: "var(--muted)", fontSize: "12px" }}>Device Type</span>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid var(--border)",
+                  paddingBottom: "8px",
+                }}
+              >
+                <span style={{ color: "var(--muted)", fontSize: "12px" }}>
+                  Device Type
+                </span>
                 <b>{selectedNode.type}</b>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--border)", paddingBottom: "8px" }}>
-                <span style={{ color: "var(--muted)", fontSize: "12px" }}>Round Trip Latency</span>
-                <b>{selectedNode.status === "Online" ? `${liveMetrics.latency} ms` : "Unreachable"}</b>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid var(--border)",
+                  paddingBottom: "8px",
+                }}
+              >
+                <span style={{ color: "var(--muted)", fontSize: "12px" }}>
+                  Round Trip Latency
+                </span>
+                <b>
+                  {selectedNode.status === "Online"
+                    ? `${liveMetrics.latency} ms`
+                    : "Unreachable"}
+                </b>
               </div>
             </div>
 

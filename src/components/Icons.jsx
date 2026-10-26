@@ -117,6 +117,10 @@ export const CalendarDays = createIcon("CalendarDays", [
   ["path", { d: "M16 18h.01", key: "kzsmim" }]
 ]);
 
+export const Check = createIcon("Check", [
+  ["polyline", { points: "20 6 9 17 4 12", key: "1p0n18" }]
+]);
+
 export const CheckCircle = createIcon("CheckCircle", [
   ["path", { d: "M21.801 10A10 10 0 1 1 17 3.335", key: "yps3ct" }],
   ["path", { d: "m9 11 3 3L22 4", key: "1pflzl" }]
@@ -456,3 +460,20 @@ export const Zap = createIcon("Zap", [
     }
   ]
 ]);
+
+export const Minus = createIcon("Minus", [
+  ["path", { d: "M5 12h14", key: "1y8bb2" }]
+]);
+
+export const Printer = createIcon("Printer", [
+  ["path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2", key: "1hfl1x" }],
+  ["path", { d: "M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6", key: "1t2p2z" }],
+  ["rect", { x: "6", y: "14", width: "12", height: "8", rx: "1", key: "1qg2v2" }]
+]);
+
+export const FileCheck = createIcon("FileCheck", [
+  ["path", { d: "M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z", key: "1b089c" }],
+  ["polyline", { points: "14 2 14 8 20 8", key: "1mti6g" }],
+  ["path", { d: "m9 15 2 2 4-4", key: "1mglay" }]
+]);
+

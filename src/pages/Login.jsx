@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   Mail,
@@ -13,6 +13,7 @@ import {
 } from "../components/Icons";
 import { useAuth } from "../contexts/AuthContext";
 import { AuthLayout, AuthHead, Input } from "../components/UI";
+import { validateEmail, validateRequired } from "../services/validation";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -24,22 +25,48 @@ export default function Login() {
   const [remember, setRemember] = useState(false);
   const [show, setShow] = useState(false);
   const [err, setErr] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [notice, setNotice] = useState(location.state?.message || "");
 
   const handleDemoLogin = () => {
     setEmail("admin@netflow.com");
     setPass("admin123");
     setErr("");
+    setFieldErrors({});
     const result = login("admin@netflow.com", "admin123", remember);
     if (result.success) {
       navigate("/", { replace: true });
     }
   };
 
+  const validate = () => {
+    const errs = {};
+    const emailErr = validateEmail(email);
+    if (emailErr) errs.email = emailErr;
+
+    const passErr = validateRequired(pass, "Password");
+    if (passErr) errs.password = passErr;
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validate();
+  };
+
   function submit(e) {
     e.preventDefault();
     setErr("");
     setNotice("");
+    setTouched({ email: true, password: true });
+
+    if (!validate()) {
+      return;
+    }
+
     const result = login(email, pass, remember);
     if (result.success) {
       navigate("/", { replace: true });
@@ -64,7 +91,7 @@ export default function Login() {
         "Multi-page session logout controls",
       ]}
     >
-      <form className="auth-card" onSubmit={submit}>
+      <form className="auth-card" onSubmit={submit} noValidate>
         <AuthHead
           title="Sign in"
           desc="Enter your credentials to access the NetFlow portal"
@@ -161,21 +188,34 @@ export default function Login() {
           <span>⚡ One-Click Demo Admin Login</span>
         </button>
 
-        <label>Email address</label>
+        <label htmlFor="login-email">Email address</label>
         <Input
+          id="login-email"
           icon={<Mail size={17} />}
           value={email}
-          onChange={setEmail}
+          onChange={(v) => setEmail(String(v))}
+          onBlur={() => handleBlur("email")}
+          error={fieldErrors.email}
+          touched={touched.email}
           type="email"
           placeholder="admin@netflow.com"
         />
 
-        <label style={{ marginTop: "14px", display: "block" }}>Password</label>
-        <div className="input-wrap">
+        <label htmlFor="login-password" style={{ marginTop: "14px", display: "block" }}>Password</label>
+        <div
+          className="input-wrap"
+          style={
+            fieldErrors.password && touched.password
+              ? { borderColor: "var(--danger)", boxShadow: "0 0 0 1px var(--danger)" }
+              : undefined
+          }
+        >
           <Lock size={17} />
           <input
+            id="login-password"
             value={pass}
             onChange={(e) => setPass(e.target.value)}
+            onBlur={() => handleBlur("password")}
             type={show ? "text" : "password"}
             placeholder="Enter your password (e.g. admin123)"
             required
@@ -189,6 +229,11 @@ export default function Login() {
             {show ? <EyeOff size={17} /> : <Eye size={17} />}
           </button>
         </div>
+        {fieldErrors.password && touched.password && (
+          <small role="alert" style={{ color: "var(--danger)", fontSize: "10px", display: "block", marginTop: "4px" }}>
+            {fieldErrors.password}
+          </small>
+        )}
 
         <div
           style={{

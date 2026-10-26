@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useOutletContext, useParams, useNavigate } from "react-router-dom";
 import {
   Download,
   Plus,
@@ -15,56 +15,108 @@ import {
 } from "../components/Icons";
 import { exportCSV } from "../services/storage";
 import { useData } from "../contexts/DataContext";
-import { Card, Header, Button, SearchBox, Status } from "../components/UI";
+import { Card, Header, Button, SearchBox, Status, FormField, Input, Select } from "../components/UI";
+import { validateIP, validateRequired } from "../services/validation";
 
 export function DeviceModal({ form, setForm, save, close, editing }) {
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const firstInputRef = useRef(null);
+
+  useEffect(() => {
+    setTimeout(() => firstInputRef.current?.focus(), 100);
+  }, []);
+
+  const validate = () => {
+    const errs = {};
+    const nameErr = validateRequired(form.name, "Device Name");
+    if (nameErr) errs.name = nameErr;
+
+    const locErr = validateRequired(form.location, "Location");
+    if (locErr) errs.location = locErr;
+
+    const ipErr = validateIP(form.ip);
+    if (ipErr) errs.ip = ipErr;
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validate();
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setTouched({ name: true, location: true, ip: true });
+    if (!validate()) return;
+    save(e);
+  };
+
   return (
-    <div className="modal-bg">
-      <form className="modal" onSubmit={save}>
+    <div className="modal-bg" role="dialog" aria-modal="true">
+      <form className="modal" onSubmit={handleSubmit}>
         <div className="modal-head">
           <h2>{editing ? "Edit Device" : "Add Device"}</h2>
-          <button type="button" className="icon-btn" onClick={close}>
+          <button type="button" className="icon-btn" onClick={close} aria-label="Close device modal">
             <X size={17} />
           </button>
         </div>
 
-        {["name", "location", "ip"].map((k) => (
-          <div className="form-group" key={k}>
-            <label>
-              {k === "ip" ? "IP Address" : k[0].toUpperCase() + k.slice(1)}
-            </label>
-            <input
-              value={form[k]}
-              onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-              required
-            />
-          </div>
-        ))}
+        <Input
+          inputRef={firstInputRef}
+          id="dev-name"
+          label="Device Name"
+          required
+          value={form.name}
+          onChange={(val) => setForm({ ...form, name: String(val) })}
+          onBlur={() => handleBlur("name")}
+          error={errors.name}
+          touched={touched.name}
+          placeholder="e.g. Core Switch B"
+        />
+
+        <Input
+          id="dev-location"
+          label="Location"
+          required
+          value={form.location}
+          onChange={(val) => setForm({ ...form, location: String(val) })}
+          onBlur={() => handleBlur("location")}
+          error={errors.location}
+          touched={touched.location}
+          placeholder="e.g. Main Server Room"
+        />
+
+        <Input
+          id="dev-ip"
+          label="IP Address"
+          required
+          value={form.ip}
+          onChange={(val) => setForm({ ...form, ip: String(val) })}
+          onBlur={() => handleBlur("ip")}
+          error={errors.ip}
+          touched={touched.ip}
+          placeholder="e.g. 10.10.0.1"
+          helperText="Format: IPv4 address"
+        />
 
         <div className="two-col">
-          <div className="form-group">
-            <label>Type</label>
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-            >
-              <option>Switch</option>
-              <option>Router</option>
-              <option>Access Point</option>
-              <option>Server</option>
-              <option>Printer</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Status</label>
-            <select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-            >
-              <option>Online</option>
-              <option>Offline</option>
-            </select>
-          </div>
+          <Select
+            id="dev-type"
+            label="Type"
+            value={form.type}
+            onChange={(e) => setForm({ ...form, type: e.target.value })}
+            options={["Switch", "Router", "Access Point", "Server", "Printer"]}
+          />
+          <Select
+            id="dev-status"
+            label="Status"
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value })}
+            options={["Online", "Offline"]}
+          />
         </div>
 
         <div className="modal-actions">
@@ -82,6 +134,7 @@ export function DeviceModal({ form, setForm, save, close, editing }) {
 function PingTerminalModal({ device, close, executePing }) {
   const [lines, setLines] = useState([]);
   const [running, setRunning] = useState(false);
+  const terminalRef = useRef(null);
 
   const startPing = async () => {
     setLines([
@@ -101,8 +154,22 @@ function PingTerminalModal({ device, close, executePing }) {
     startPing();
   }, [device.ip]);
 
+  // DOM auto-scroll on new terminal line
+  useEffect(() => {
+    if (terminalRef.current) {
+      if (typeof terminalRef.current.scrollTo === "function") {
+        terminalRef.current.scrollTo({
+          top: terminalRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      } else {
+        terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      }
+    }
+  }, [lines]);
+
   return (
-    <div className="modal-bg">
+    <div className="modal-bg" role="dialog" aria-modal="true">
       <div className="modal" style={{ width: "min(600px, 95vw)" }}>
         <div className="modal-head">
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -114,12 +181,12 @@ function PingTerminalModal({ device, close, executePing }) {
               <small style={{ color: "var(--muted)" }}>Target: {device.ip}</small>
             </div>
           </div>
-          <button type="button" className="icon-btn" onClick={close}>
+          <button type="button" className="icon-btn" onClick={close} aria-label="Close terminal">
             <X size={17} />
           </button>
         </div>
 
-        <div className="terminal-window">
+        <div className="terminal-window" ref={terminalRef}>
           <div className="terminal-header">
             <span className="terminal-dot" style={{ background: "#ff5f56" }} />
             <span className="terminal-dot" style={{ background: "#ffbd2e" }} />
@@ -170,6 +237,8 @@ function PingTerminalModal({ device, close, executePing }) {
 export default function Devices({ query = "" }) {
   const outletCtx = useOutletContext();
   const globalQuery = outletCtx?.query ?? query;
+  const { id: paramDeviceId } = useParams();
+  const navigate = useNavigate();
 
   const {
     devices,
@@ -195,6 +264,20 @@ export default function Devices({ query = "" }) {
     cpu: 20,
     uptime: "1d",
   });
+
+  // Handle dynamic route parameter :id (e.g. /devices/SW-001 or /devices/AP-118)
+  useEffect(() => {
+    if (paramDeviceId && devices.length > 0) {
+      const target = devices.find(
+        (d) =>
+          d.id.toLowerCase() === paramDeviceId.toLowerCase() ||
+          d.name.toLowerCase() === paramDeviceId.toLowerCase()
+      );
+      if (target) {
+        setPingTarget(target);
+      }
+    }
+  }, [paramDeviceId, devices]);
 
   useEffect(() => {
     if (globalQuery !== undefined) {
@@ -351,7 +434,10 @@ export default function Devices({ query = "" }) {
                     {/* Live Ping Test Action */}
                     <button
                       className="btn-action"
-                      onClick={() => setPingTarget(d)}
+                      onClick={() => {
+                        setPingTarget(d);
+                        navigate(`/devices/${d.id}`);
+                      }}
                       title="Run Live ICMP Ping Diagnostic"
                     >
                       <Terminal size={13} /> Ping
@@ -423,7 +509,10 @@ export default function Devices({ query = "" }) {
       {pingTarget && (
         <PingTerminalModal
           device={pingTarget}
-          close={() => setPingTarget(null)}
+          close={() => {
+            setPingTarget(null);
+            if (paramDeviceId) navigate("/devices");
+          }}
           executePing={executePing}
         />
       )}

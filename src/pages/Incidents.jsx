@@ -1,14 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useOutletContext } from "react-router-dom";
 import { Plus, TriangleAlert, X, CheckCircle2 } from "../components/Icons";
 import { useData } from "../contexts/DataContext";
-import { Card, Header, Button, SearchBox, Status } from "../components/UI";
+import { Card, Header, Button, SearchBox, Status, FormField, Input, Select } from "../components/UI";
+import { validateRequired } from "../services/validation";
 
-export default function Incidents() {
+export default function Incidents({ query = "" }) {
+  const outletCtx = useOutletContext();
+  const globalQuery = outletCtx?.query ?? query;
+
   const { incidents, resolveIncident, addIncident } = useData();
 
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(globalQuery);
   const [add, setAdd] = useState(false);
   const [filter, setFilter] = useState("All");
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
+  const titleInputRef = useRef(null);
 
   const [f, setF] = useState({
     title: "",
@@ -16,6 +25,20 @@ export default function Incidents() {
     status: "Open",
     device: "",
   });
+
+  // Sync global search from topbar
+  useEffect(() => {
+    if (globalQuery !== undefined) {
+      setQ(globalQuery);
+    }
+  }, [globalQuery]);
+
+  // Focus first input on modal open (DOM manipulation via ref)
+  useEffect(() => {
+    if (add) {
+      setTimeout(() => titleInputRef.current?.focus(), 100);
+    }
+  }, [add]);
 
   const list = incidents.filter((i) => {
     const matchesSearch = Object.values(i)
@@ -30,8 +53,24 @@ export default function Incidents() {
     return i.severity.toLowerCase() === filter.toLowerCase();
   });
 
+  const validate = () => {
+    const errs = {};
+    const titleErr = validateRequired(f.title, "Incident Title");
+    if (titleErr) errs.title = titleErr;
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validate();
+  };
+
   function submit(e) {
     e.preventDefault();
+    setTouched({ title: true });
+    if (!validate()) return;
+
     addIncident({
       title: f.title,
       severity: f.severity,
@@ -45,6 +84,8 @@ export default function Incidents() {
       status: "Open",
       device: "",
     });
+    setErrors({});
+    setTouched({});
   }
 
   const filterOptions = [
@@ -118,7 +159,7 @@ export default function Incidents() {
       </div>
 
       {add && (
-        <div className="modal-bg">
+        <div className="modal-bg" role="dialog" aria-modal="true">
           <form className="modal" onSubmit={submit}>
             <div className="modal-head">
               <h2>Report Incident</h2>
@@ -126,41 +167,43 @@ export default function Incidents() {
                 type="button"
                 className="icon-btn"
                 onClick={() => setAdd(false)}
+                aria-label="Close report incident modal"
               >
                 <X size={17} />
               </button>
             </div>
-            <div className="form-group">
-              <label>Incident Title</label>
-              <input
-                required
-                value={f.title}
-                onChange={(e) => setF({ ...f, title: e.target.value })}
-                placeholder="e.g. Core Switch link flapping"
+
+            <Input
+              inputRef={titleInputRef}
+              id="inc-title"
+              label="Incident Title"
+              required
+              value={f.title}
+              onChange={(val) => setF({ ...f, title: String(val) })}
+              onBlur={() => handleBlur("title")}
+              error={errors.title}
+              touched={touched.title}
+              placeholder="e.g. Core Switch link flapping"
+            />
+
+            <div className="two-col">
+              <Select
+                id="inc-severity"
+                label="Severity"
+                value={f.severity}
+                onChange={(e) => setF({ ...f, severity: e.target.value })}
+                options={["Low", "Medium", "High", "Critical"]}
+              />
+
+              <Input
+                id="inc-device"
+                label="Affected Device"
+                value={f.device}
+                onChange={(val) => setF({ ...f, device: String(val) })}
+                placeholder="e.g. AP-118 or SW-001"
               />
             </div>
-            <div className="two-col">
-              <div className="form-group">
-                <label>Severity</label>
-                <select
-                  value={f.severity}
-                  onChange={(e) => setF({ ...f, severity: e.target.value })}
-                >
-                  <option>Low</option>
-                  <option>Medium</option>
-                  <option>High</option>
-                  <option>Critical</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Affected Device</label>
-                <input
-                  value={f.device}
-                  onChange={(e) => setF({ ...f, device: e.target.value })}
-                  placeholder="e.g. AP-118 or SW-001"
-                />
-              </div>
-            </div>
+
             <div className="modal-actions">
               <Button
                 type="button"

@@ -41,6 +41,7 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="devices" element={<Devices />} />
+            <Route path="devices/:id" element={<Devices />} />
             <Route path="network" element={<NetworkMonitoring />} />
             <Route path="resources" element={<Resources />} />
             <Route path="bookings" element={<Bookings />} />

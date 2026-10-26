@@ -1,12 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useOutletContext } from "react-router-dom";
 import { Download, Plus, Pencil, Trash2, X } from "../components/Icons";
 import { getData, saveData, newId, exportCSV } from "../services/storage";
-import { Card, Header, Button, SearchBox, Status } from "../components/UI";
+import { Card, Header, Button, SearchBox, Status, FormField, Input, Select } from "../components/UI";
+import { validateRequired, validateEmail } from "../services/validation";
 
-export default function Users() {
-  const [rows, setRows] = useState(getData("users"));
-  const [q, setQ] = useState("");
+export default function Users({ query = "" }) {
+  const outletCtx = useOutletContext();
+  const globalQuery = outletCtx?.query ?? query;
+
+  const [rows, setRows] = useState(() => getData("users"));
+  const [q, setQ] = useState(globalQuery);
   const [edit, setEdit] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
+  const nameInputRef = useRef(null);
+
   const [f, setF] = useState({
     name: "",
     email: "",
@@ -14,12 +24,46 @@ export default function Users() {
     status: "Active",
   });
 
+  // Sync global search from topbar
+  useEffect(() => {
+    if (globalQuery !== undefined) {
+      setQ(globalQuery);
+    }
+  }, [globalQuery]);
+
+  // Focus first input on modal open (DOM manipulation via ref)
+  useEffect(() => {
+    if (edit) {
+      setTimeout(() => nameInputRef.current?.focus(), 100);
+    }
+  }, [edit]);
+
   const list = rows.filter((x) =>
     Object.values(x).join(" ").toLowerCase().includes(q.toLowerCase())
   );
 
+  const validate = () => {
+    const errs = {};
+    const nameErr = validateRequired(f.name, "Full Name");
+    if (nameErr) errs.name = nameErr;
+
+    const emailErr = validateEmail(f.email);
+    if (emailErr) errs.email = emailErr;
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validate();
+  };
+
   function save(e) {
     e.preventDefault();
+    setTouched({ name: true, email: true });
+    if (!validate()) return;
+
     const n =
       edit && !edit.new
         ? rows.map((x) => (x.id === edit.id ? { ...f, id: x.id } : x))
@@ -27,6 +71,8 @@ export default function Users() {
     setRows(n);
     saveData("users", n);
     setEdit(null);
+    setErrors({});
+    setTouched({});
   }
 
   return (
@@ -53,6 +99,8 @@ export default function Users() {
                   status: "Active",
                 });
                 setEdit({ new: true });
+                setErrors({});
+                setTouched({});
               }}
             >
               Add User
@@ -60,7 +108,7 @@ export default function Users() {
           </div>
         }
       />
-      <SearchBox value={q} onChange={setQ} placeholder="Search users..." />
+      <SearchBox value={q} onChange={setQ} placeholder="Search users by name, email, or role..." />
       <div className="table-wrap">
         <table>
           <thead>
@@ -103,8 +151,11 @@ export default function Users() {
                     onClick={() => {
                       setEdit(u);
                       setF(u);
+                      setErrors({});
+                      setTouched({});
                     }}
                     aria-label="Edit user"
+                    title="Edit user"
                   >
                     <Pencil size={14} />
                   </button>
@@ -118,6 +169,7 @@ export default function Users() {
                       }
                     }}
                     aria-label="Delete user"
+                    title="Delete user"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -129,7 +181,7 @@ export default function Users() {
       </div>
 
       {edit && (
-        <div className="modal-bg">
+        <div className="modal-bg" role="dialog" aria-modal="true">
           <form className="modal" onSubmit={save}>
             <div className="modal-head">
               <h2>{edit.new ? "Add user" : "Edit user"}</h2>
@@ -142,46 +194,51 @@ export default function Users() {
                 <X size={17} />
               </button>
             </div>
-            <div className="form-group">
-              <label>Full Name</label>
-              <input
-                required
-                value={f.name}
-                onChange={(e) => setF({ ...f, name: e.target.value })}
-              />
-            </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input
-                required
-                type="email"
-                value={f.email}
-                onChange={(e) => setF({ ...f, email: e.target.value })}
-              />
-            </div>
+
+            <Input
+              inputRef={nameInputRef}
+              id="user-name"
+              label="Full Name"
+              required
+              value={f.name}
+              onChange={(val) => setF({ ...f, name: String(val) })}
+              onBlur={() => handleBlur("name")}
+              error={errors.name}
+              touched={touched.name}
+              placeholder="e.g. Priya Sharma"
+            />
+
+            <Input
+              id="user-email"
+              label="Email Address"
+              type="email"
+              required
+              value={f.email}
+              onChange={(val) => setF({ ...f, email: String(val) })}
+              onBlur={() => handleBlur("email")}
+              error={errors.email}
+              touched={touched.email}
+              placeholder="name@college.edu"
+            />
+
             <div className="two-col">
-              <div className="form-group">
-                <label>Role</label>
-                <select
-                  value={f.role}
-                  onChange={(e) => setF({ ...f, role: e.target.value })}
-                >
-                  <option>Student</option>
-                  <option>Faculty</option>
-                  <option>Administrator</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Status</label>
-                <select
-                  value={f.status}
-                  onChange={(e) => setF({ ...f, status: e.target.value })}
-                >
-                  <option>Active</option>
-                  <option>Inactive</option>
-                </select>
-              </div>
+              <Select
+                id="user-role"
+                label="Role"
+                value={f.role}
+                onChange={(e) => setF({ ...f, role: e.target.value })}
+                options={["Student", "Faculty", "Administrator"]}
+              />
+
+              <Select
+                id="user-status"
+                label="Status"
+                value={f.status}
+                onChange={(e) => setF({ ...f, status: e.target.value })}
+                options={["Active", "Inactive"]}
+              />
             </div>
+
             <div className="modal-actions">
               <Button
                 type="button"

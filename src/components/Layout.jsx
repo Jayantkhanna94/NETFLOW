@@ -188,8 +188,13 @@ export default function Layout({ children }) {
                           onClick={() => {
                             if (n.title.toLowerCase().includes("incident")) {
                               navigate("/incidents");
-                            } else if (n.title.toLowerCase().includes("device")) {
-                              navigate("/devices");
+                            } else if (n.title.toLowerCase().includes("device") || n.title.includes("(")) {
+                              const match = n.title.match(/\(([^)]+)\)/);
+                              if (match && match[1]) {
+                                navigate(`/devices/${match[1]}`);
+                              } else {
+                                navigate("/devices");
+                              }
                             }
                             setShowNotifs(false);
                           }}

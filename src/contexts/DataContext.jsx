@@ -14,13 +14,39 @@ export function DataProvider({ children }) {
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem("netflow_notifications");
     if (saved) {
-      try { return JSON.parse(saved); } catch {}
+      try {
+        return JSON.parse(saved);
+      } catch {}
     }
     return [
-      { id: "notif-1", title: "Lab AP (AP-118) disconnected", type: "danger", time: "10m ago", read: false },
-      { id: "notif-2", title: "High CPU threshold on ERP Server (67%)", type: "warning", time: "38m ago", read: false },
-      { id: "notif-3", title: "Gateway Router firmware verified", type: "success", time: "2h ago", read: true },
-      { id: "notif-4", title: "Core Switch link aggregation active", type: "info", time: "4h ago", read: true },
+      {
+        id: "notif-1",
+        title: "Lab AP (AP-118) disconnected",
+        type: "danger",
+        time: "10m ago",
+        read: false,
+      },
+      {
+        id: "notif-2",
+        title: "High CPU threshold on ERP Server (67%)",
+        type: "warning",
+        time: "38m ago",
+        read: false,
+      },
+      {
+        id: "notif-3",
+        title: "Gateway Router firmware verified",
+        type: "success",
+        time: "2h ago",
+        read: true,
+      },
+      {
+        id: "notif-4",
+        title: "Core Switch link aggregation active",
+        type: "info",
+        time: "4h ago",
+        read: true,
+      },
     ];
   });
 
@@ -28,13 +54,35 @@ export function DataProvider({ children }) {
   const [activityLogs, setActivityLogs] = useState(() => {
     const saved = localStorage.getItem("netflow_activity_logs");
     if (saved) {
-      try { return JSON.parse(saved); } catch {}
+      try {
+        return JSON.parse(saved);
+      } catch {}
     }
     return [
-      { id: "log-1", text: "Core Switch ping telemetry stable at 14ms", time: "Just now", type: "success" },
-      { id: "log-2", text: "Global throughput peaked at 0.91 Gbps", time: "1m ago", type: "info" },
-      { id: "log-3", text: "ERP Server backup synchronisation completed", time: "8m ago", type: "success" },
-      { id: "log-4", text: "Lab AP packet loss detected (100% outage)", time: "10m ago", type: "danger" },
+      {
+        id: "log-1",
+        text: "Core Switch ping telemetry stable at 14ms",
+        time: "Just now",
+        type: "success",
+      },
+      {
+        id: "log-2",
+        text: "Global throughput peaked at 0.91 Gbps",
+        time: "1m ago",
+        type: "info",
+      },
+      {
+        id: "log-3",
+        text: "ERP Server backup synchronisation completed",
+        time: "8m ago",
+        type: "success",
+      },
+      {
+        id: "log-4",
+        text: "Lab AP packet loss detected (100% outage)",
+        time: "10m ago",
+        type: "danger",
+      },
     ];
   });
 
@@ -55,7 +103,11 @@ export function DataProvider({ children }) {
     for (let i = 7; i >= 0; i--) {
       const d = new Date(now.getTime() - i * 15000);
       points.push({
-        t: d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        t: d.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
         v: Math.floor(65 + Math.random() * 25),
       });
     }
@@ -64,7 +116,10 @@ export function DataProvider({ children }) {
 
   // Persist notifications & logs
   useEffect(() => {
-    localStorage.setItem("netflow_notifications", JSON.stringify(notifications));
+    localStorage.setItem(
+      "netflow_notifications",
+      JSON.stringify(notifications)
+    );
   }, [notifications]);
 
   useEffect(() => {
@@ -91,7 +146,10 @@ export function DataProvider({ children }) {
       setLiveMetrics((prev) => ({
         bandwidth: `${(0.82 + Math.random() * 0.12).toFixed(2)} Gbps`,
         bandwidthVal: newThroughput,
-        latency: Math.max(16, Math.min(36, Math.round(24 + (Math.random() * 6 - 3)))),
+        latency: Math.max(
+          16,
+          Math.min(36, Math.round(24 + (Math.random() * 6 - 3)))
+        ),
         packetLoss: `${(0.05 + Math.random() * 0.05).toFixed(2)}%`,
         interfacesUp: prev.interfacesUp,
         totalInterfaces: prev.totalInterfaces,
@@ -172,7 +230,10 @@ export function DataProvider({ children }) {
     const next = devices.filter((d) => d.id !== id);
     persistDevices(next);
     addLog(`Device deleted: ${target?.name || id}`, "warning");
-    addNotification(`Device ${target?.name || id} removed from registry`, "warning");
+    addNotification(
+      `Device ${target?.name || id} removed from registry`,
+      "warning"
+    );
   };
 
   // Instant Power toggle Online <-> Offline
@@ -234,13 +295,18 @@ export function DataProvider({ children }) {
     setTimeout(() => {
       setDevices((curDevs) => {
         const restored = curDevs.map((d) =>
-          d.id === id ? { ...d, status: "Online", cpu: 32, uptime: "0d 00h 01m" } : d
+          d.id === id
+            ? { ...d, status: "Online", cpu: 32, uptime: "0d 00h 01m" }
+            : d
         );
         saveData("devices", restored);
         return restored;
       });
       addLog(`${target.name} reboot completed. System operational.`, "success");
-      addNotification(`${target.name} reboot completed successfully.`, "success");
+      addNotification(
+        `${target.name} reboot completed successfully.`,
+        "success"
+      );
     }, 3000);
   };
 
@@ -267,7 +333,9 @@ export function DataProvider({ children }) {
 
     const lost = packets.filter((p) => !p.success).length;
     const lossRate = (lost / 4) * 100;
-    const summary = `Ping statistics for ${ip}: Packets: Sent = 4, Received = ${4 - lost}, Lost = ${lost} (${lossRate}% loss)`;
+    const summary = `Ping statistics for ${ip}: Packets: Sent = 4, Received = ${
+      4 - lost
+    }, Lost = ${lost} (${lossRate}% loss)`;
     onPacket?.(summary);
     return { packets, lossRate };
   };

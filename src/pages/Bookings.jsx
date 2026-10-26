@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Plus, CalendarDays, Clock3, MapPin, Search } from "../components/Icons";
+import { Plus, CalendarDays, Clock3, MapPin } from "../components/Icons";
+
 import { saveData } from "../services/storage";
 import { Card, Header, Button, Status, SearchBox } from "../components/UI";
 import { useCartStore } from "../store/useCartStore";
@@ -57,7 +58,7 @@ export default function Bookings({ query = "" }) {
 
   const [q, setQ] = useState(globalQuery);
 
-  // Sync global search from topbar
+  // Sync global search from
   useEffect(() => {
     if (globalQuery !== undefined) {
       setQ(globalQuery);
